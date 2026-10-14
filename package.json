@@ -1,0 +1,19 @@
+{
+  "name": "sbi-bench",
+  "version": "1.0.0",
+  "description": "A node package for benchmarking Sites of Biological Importance based on invert data.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "R Burkmar",
+  "license": "ISC",
+  "dependencies": {
+    "@turf/area": "^7.4.0",
+    "@turf/boolean-point-in-polygon": "^7.4.0",
+    "csv-parse": "^7.0.3",
+    "proj4": "^2.22.0",
+    "rbush": "^4.0.1",
+    "shapefile": "^0.6.6"
+  }
+}

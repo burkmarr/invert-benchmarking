@@ -1,0 +1,348 @@
+{
+"@context": "https://w3id.org/ro/crate/1.2/context",
+"@graph": [
+{
+"@type": "CreativeWork",
+"@id": "ro-crate-metadata.json",
+"conformsTo": { "@id": "https://w3id.org/ro/crate/1.2" },
+"about": { "@id": "https://catalogue.ceh.ac.uk/id/2a353d2d-c1b9-4bf7-8702-9e78910844bc" }
+},
+{
+"@type":"Dataset",
+"name":"The Pantheon database: habitat related traits, conservation status and taxa associations for invertebrates in England",
+"@id": "https://catalogue.ceh.ac.uk/id/2a353d2d-c1b9-4bf7-8702-9e78910844bc",
+"identifier": {"@id": "https://doi.org/10.5285/2a353d2d-c1b9-4bf7-8702-9e78910844bc"},
+"citation":"Webb, J., Heaver, D., Lott, D., Dean, H.J., van Breda, J., Curson, J., Harvey, M.C., Gurney, M., Roy, D.B., van Breda, A., Drake, M., Alexander, K.N.A., Foster, G. (2017). The Pantheon database: habitat related traits, conservation status and taxa associations for invertebrates in England. NERC Environmental Information Data Centre. (Dataset). https://doi.org/10.5285/2a353d2d-c1b9-4bf7-8702-9e78910844bc",
+"hasPart": [
+{"@id":
+"data/PantheonAssociations_v3.7.4.csv"
+} ,
+{"@id":
+"data/PantheonConservationStatus_v3.7.4.csv"
+} ,
+{"@id":
+"data/PantheonHabitatTraits_v3.7.4.csv"
+} ,
+{"@id":
+"supporting-documents/PantheonDatabase_v3.7.4.docx"
+} ],
+"description":"The Pantheon database contains habitat-related traits, feeding guilds, conservation status (including rarity and threat status), legal protection data and associations with other taxa for just over 11,700 invertebrates. The database has been developed for invertebrates within England so the data should be used with caution when applying it to invertebrates of other countries. The data have been extracted from numerous sources within the published literature and compiled and categorised by entomological experts over a number of years. The database also includes (and supersedes) species assemblage types (SATs) from the Invertebrate Species-habitat Information System (ISIS). Species names have been linked with the Taxon Version Key (TVK; unique identifier) from the UK Species Inventory, held by the Natural History Museum, where possible. Overall the database holds 154,072 records. The database was developed by Natural England and the Centre for Ecology & Hydrology as part of a development of online analytical tools to benefit invertebrate conservation and site assessments.",
+"isAccessibleForFree": true,
+"dateCreated":"2017-03-31",
+"datePublished":"2017-05-05",
+"keywords": [
+"biotopes"
+,
+"conservation status"
+,
+"feeding guilds"
+,
+"habitat fidelity"
+,
+"habitats"
+,
+"invertebrates"
+,
+"NEC05413"
+,
+"Pantheon"
+,
+"rarity"
+,
+"resources"
+,
+"species associations"
+,
+"threat"
+,
+{"@type": "DefinedTerm","@id": "https://sws.geonames.org/6269131/","name": "England","inDefinedTermSet": "https://www.geonames.org/" }
+],
+"creator": [
+{"@id": "#creator0"},
+{"@id": "#creator1"},
+{"@id": "#creator2"},
+{"@id": "https://orcid.org/0000-0002-9602-7202"},
+{"@id": "#creator4"},
+{"@id": "#creator5"},
+{"@id": "#creator6"},
+{"@id": "#creator7"},
+{"@id": "https://orcid.org/0000-0002-5147-0331"},
+{"@id": "#creator9"},
+{"@id": "#creator10"},
+{"@id": "#creator11"},
+{"@id": "#creator12"}
+],
+"@reverse": {
+"citation":[
+{"@id": "https://www.crew.ac.uk/publication/moderating-extremes-water-availability-review-role-functioning-wetlands"},
+{"@id": "https://doi.org/10.1016/j.biocon.2023.110004"},
+{"@id": "https://doi.org/10.1038/s41597-025-05487-7"}
+]
+},
+"temporalCoverage":[
+"2007-03-31/2017-03-31" ],
+"spatialCoverage": [ {"@id": "#bbox0"}],
+"license": {"@id": "https://spdx.org/licenses/OGL-UK-3.0"},
+"distribution": [ {"@id": "#distribution0"}],
+"publisher":{"@id":"https://ror.org/04xw4m193"},
+"provider" : {"@id":"https://ror.org/04xw4m193"},
+"includedInDataCatalog":{ "@id": "#eidc-dataCatalogue"}
+},
+{
+"@id": "#eidc-dataCatalogue",
+"@type":"DataCatalog",
+"name":"Environmental Information Data Centre",
+"alternateName":"EIDC",
+"url":"https://catalogue.ceh.ac.uk/eidc/documents"
+},
+{
+"@id": "https://ror.org/04xw4m193",
+"@type":"Organization",
+"name":"NERC EDS Environmental Information Data Centre",
+"email": "info@eidc.ac.uk"
+}
+,{
+"@id": "https://spdx.org/licenses/OGL-UK-3.0",
+"@type": "CreativeWork",
+"name": "Open Government Licence v3",
+"alternateName":"OGL-UK-3.0",
+"sameAs": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+}
+,{
+"@id": "https://doi.org/10.5285/2a353d2d-c1b9-4bf7-8702-9e78910844bc",
+"@type":"PropertyValue",
+"propertyID": "https://registry.identifiers.org/registry/doi",
+"value": "10.5285/2a353d2d-c1b9-4bf7-8702-9e78910844bc",
+"url": "https://doi.org/10.5285/2a353d2d-c1b9-4bf7-8702-9e78910844bc"
+}
+, {
+"@id": "#bbox0",
+"@type":"Place",
+"geo": {
+"@id": "#geoshape0"
+}
+},
+{
+"@id": "#geoshape0",
+"@type": "GeoShape",
+"box":"-6.452 49.864, 1.768 55.812"
+}
+,
+{
+"@id": "#creator0",
+"@type": "Person",
+"name": "Webb, J."
+, "familyName": "Webb"
+, "givenName": "J."
+,"affiliation":{
+"@id": "https://ror.org/00r66pz14"
+}
+},
+{
+"@id": "#creator1",
+"@type": "Person",
+"name": "Heaver, D."
+, "familyName": "Heaver"
+, "givenName": "D."
+,"affiliation":{
+"@id": "https://ror.org/00r66pz14"
+}
+},
+{
+"@id": "#creator2",
+"@type": "Person",
+"name": "Lott, D."
+, "familyName": "Lott"
+, "givenName": "D."
+,"affiliation":{
+"@id": "https://ror.org/00r66pz14"
+}
+},
+{
+"@id": "https://orcid.org/0000-0002-9602-7202",
+"@type": "Person",
+"name": "Dean, H.J."
+, "familyName": "Dean"
+, "givenName": "H.J."
+,"affiliation":{
+"@id": "https://ror.org/00pggkr55"
+}
+},
+{
+"@id": "#creator4",
+"@type": "Person",
+"name": "van Breda, J."
+, "familyName": "van Breda"
+, "givenName": "J."
+,"affiliation":{
+"@type":"Organization",
+"name":"Biodiverse IT"
+}
+},
+{
+"@id": "#creator5",
+"@type": "Person",
+"name": "Curson, J."
+, "familyName": "Curson"
+, "givenName": "J."
+,"affiliation":{
+"@id": "https://ror.org/00r66pz14"
+}
+},
+{
+"@id": "#creator6",
+"@type": "Person",
+"name": "Harvey, M.C."
+, "familyName": "Harvey"
+, "givenName": "M.C."
+,"affiliation":{
+"@id": "https://ror.org/00pggkr55"
+}
+},
+{
+"@id": "#creator7",
+"@type": "Person",
+"name": "Gurney, M."
+, "familyName": "Gurney"
+, "givenName": "M."
+,"affiliation":{
+"@id": "https://ror.org/0138va192"
+}
+},
+{
+"@id": "https://orcid.org/0000-0002-5147-0331",
+"@type": "Person",
+"name": "Roy, D.B."
+, "familyName": "Roy"
+, "givenName": "D.B."
+,"affiliation":{
+"@id": "https://ror.org/00pggkr55"
+}
+},
+{
+"@id": "#creator9",
+"@type": "Person",
+"name": "van Breda, A."
+, "familyName": "van Breda"
+, "givenName": "A."
+,"affiliation":{
+"@type":"Organization",
+"name":"AVB-IT"
+}
+},
+{
+"@id": "#creator10",
+"@type": "Person",
+"name": "Drake, M."
+, "familyName": "Drake"
+, "givenName": "M."
+,"affiliation":{
+"@type":"Organization",
+"name":"Unaffiliated"
+}
+},
+{
+"@id": "#creator11",
+"@type": "Person",
+"name": "Alexander, K.N.A."
+, "familyName": "Alexander"
+, "givenName": "K.N.A."
+,"affiliation":{
+"@type":"Organization",
+"name":"Unaffiliated"
+}
+},
+{
+"@id": "#creator12",
+"@type": "Person",
+"name": "Foster, G."
+, "familyName": "Foster"
+, "givenName": "G."
+,"affiliation":{
+"@type":"Organization",
+"name":"Unaffiliated"
+}
+}
+, {
+"@id": "https://www.crew.ac.uk/publication/moderating-extremes-water-availability-review-role-functioning-wetlands",
+"@type": "CreativeWork"
+,"citation": "Centre of Expertise for Water (2022). Moderating extremes in water availability: a review of the role of functioning wetlands | CREW | Scotland's Centre of Expertise for Waters. Center of Expertise for Waters."
+,"url": "https://www.crew.ac.uk/publication/moderating-extremes-water-availability-review-role-functioning-wetlands"
+},
+{
+"@id": "https://doi.org/10.1016/j.biocon.2023.110004",
+"@type": "CreativeWork"
+,"citation": "Crowther, L.P., Gilroy, J.J., Hawkes, R.W., Peach, W.J., Salliss, D., Webb, J.R., & Dolman, P.M. (2023). Harnessing biodiversity data to inform policy: Rapid regional audits should underpin Local Nature Recovery Strategies. In Biological Conservation (Vol. 282, p. 110004). Elsevier BV."
+,"url": "https://doi.org/10.1016/j.biocon.2023.110004"
+},
+{
+"@id": "https://doi.org/10.1038/s41597-025-05487-7",
+"@type": "CreativeWork"
+,"citation": "Reji Chacko, M., Albouy, C., Altermatt, F., Casanelles-Abella, J., Brändle, M., Boussange, V., Campell, F., Ellis, W.N., Fopp, F., Gossner, M.M., Ho, H.-C., Joss, A., Kipf, P., Neff, F., Petrović, A., Prié, V., Tomanović, Ž., Zimmerli, N., & Pellissier, L. (2025). A species-level multi-trophic metaweb for Switzerland. Scientific Data, 12(1)."
+,"url": "https://doi.org/10.1038/s41597-025-05487-7"
+}
+, {
+"@id":
+"data/PantheonAssociations_v3.7.4.csv"
+,"name": "PantheonAssociations_v3.7.4.csv","@type": "File"
+,"encodingFormat": "text/csv"
+,"sha256": "d9ddafda68f8fdd5087133d665dc25f2eaa0272a7fccf9695bc91d696db8fc41"
+,"lastModified": "2020-09-22T10:43:27"
+,"bytes": 1503765
+,"contentUrl": "data/PantheonAssociations_v3.7.4.csv"
+}
+, {
+"@id":
+"data/PantheonConservationStatus_v3.7.4.csv"
+,"name": "PantheonConservationStatus_v3.7.4.csv","@type": "File"
+,"encodingFormat": "text/csv"
+,"sha256": "15bea8a67e88e41daa517b85d1b41d898417da12b767b0ac21fd7a9cbe060d2c"
+,"lastModified": "2020-09-22T10:43:27"
+,"bytes": 1110308
+,"contentUrl": "data/PantheonConservationStatus_v3.7.4.csv"
+}
+, {
+"@id":
+"data/PantheonHabitatTraits_v3.7.4.csv"
+,"name": "PantheonHabitatTraits_v3.7.4.csv","@type": "File"
+,"encodingFormat": "text/csv"
+,"sha256": "dc26e0b6eea94110512dcde88518e9d2d9f37f0e065dc289c6fef35b87bebc1e"
+,"lastModified": "2020-09-22T10:43:28"
+,"bytes": 17040383
+,"contentUrl": "data/PantheonHabitatTraits_v3.7.4.csv"
+}
+, {
+"@id":
+"supporting-documents/PantheonDatabase_v3.7.4.docx"
+,"name": "PantheonDatabase_v3.7.4.docx","@type": "File"
+,"sha256": "45201db0c55782c9ab473388ab82f30399b82ebe9ca2e2ed1e099e330a833a9a"
+,"lastModified": "2025-07-22T11:14:47"
+,"bytes": 765124
+,"contentUrl": "supporting-documents/PantheonDatabase_v3.7.4.docx"
+}
+, {
+"@id": "#distribution0",
+"@type":"DataDownload",
+"contentUrl":"https://data-package.ceh.ac.uk/data/2a353d2d-c1b9-4bf7-8702-9e78910844bc"
+,"encodingFormat":"application/zip"
+}
+, {
+"@id": "https://ror.org/00r66pz14",
+"@type": "Organization",
+"name": "Natural England",
+"identifier": "https://ror.org/00r66pz14"
+},
+{
+"@id": "https://ror.org/00pggkr55",
+"@type": "Organization",
+"name": "UK Centre for Ecology & Hydrology",
+"identifier": "https://ror.org/00pggkr55"
+},
+{
+"@id": "https://ror.org/0138va192",
+"@type": "Organization",
+"name": "RSPB",
+"identifier": "https://ror.org/0138va192"
+}
+]
+}
