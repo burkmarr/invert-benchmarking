@@ -349,9 +349,13 @@ body {
 	font-variant-numeric: tabular-nums;
 }
 
-.layer-section {
+.layer-groups {
 	min-height: 0;
+	flex: 1 1 auto;
 	overflow-y: auto;
+}
+
+.layer-section {
 	padding-bottom: 12px;
 }
 

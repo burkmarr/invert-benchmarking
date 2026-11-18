@@ -10,6 +10,9 @@ Drag the polygon layer rows to change their stacking order; higher rows appear
 above lower rows on the map.
 Click a layer's colour swatch to change its colour and fill opacity. These
 settings are saved in the browser's local storage.
+The **BAP habitats** section lists the habitat PMTiles in `data/bap/`; these
+layers can be styled and reordered within their section and always render below
+the Analytical areas.
 Use the **Recentre** button beside the basemap heading to centre on the LERN
 boundary, zoomed one level closer than its fitted extent.
 
@@ -26,5 +29,8 @@ supports byte-range requests for `.pmtiles` files. The app loads its mapping
 libraries from unpkg and its basemap tiles from their respective providers,
 so an internet connection is required.
 
-To add another overlay, put its `.pmtiles` file in `data/` and add its file,
-layer name, display name, and colour to the `siteLayers` list in `app.js`.
+To add another analytical area, put its `.pmtiles` file in `data/` and add its
+file, layer name, display name, and default colour to `analyticalLayers` in
+`app.js`. To add a BAP habitat, put its archive in `data/bap/` and add its
+habitat value to `bapHabitats` and a default colour to `bapColors`. BAP layers
+always render below Analytical areas.

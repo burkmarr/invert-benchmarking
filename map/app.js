@@ -6,7 +6,7 @@ import { Protocol } from 'pmtiles';
 const protocol = new Protocol();
 maplibregl.addProtocol('pmtiles', protocol.tile);
 
-const siteLayers = [
+const analyticalLayers = [
 	{ id: 'bhs', name: 'BHS', file: 'bhs.pmtiles', color: '#18836a' },
 	{ id: 'lern', name: 'LERN', file: 'lern.pmtiles', color: '#d07a34' },
 	{ id: 'sssi-in-lern', name: 'SSSI in LERN', file: 'sssi-in-lern.pmtiles', color: '#7856a5' },
@@ -14,6 +14,54 @@ const siteLayers = [
 	{ id: 'tetrads', name: 'Tetrads', file: 'tetrads.pmtiles', color: '#3978b8' },
 	{ id: 'monads', name: 'Monads', file: 'monads.pmtiles', color: '#bd5260' },
 ];
+
+const bapHabitats = [
+	'Blanket bog',
+	'Coastal and floodplain grazing marsh',
+	'Coastal saltmarsh',
+	'Coastal sand dunes',
+	'Deciduous woodland',
+	'Fragmented heath',
+	'Good quality semi improved grassland',
+	'Grass moorland',
+	'Lakes',
+	'Limestone pavement',
+	'Lowland calcareous grassland',
+	'Lowland dry acid grassland',
+	'Lowland fens',
+	'Lowland heathland',
+	'Lowland meadows',
+	'Lowland raised bog',
+	'Maritime cliff and slope',
+	'Mudflats',
+	'No main habitat but additional habitats present',
+	'Ponds',
+	'Purple moor grass and rush pastures',
+	'Reedbeds',
+	'Traditional orchard',
+	'Upland calcareous grassland',
+	'Upland flushes fens and swamps',
+	'Upland hay meadow',
+	'Upland heathland',
+];
+const bapColors = [
+	'#a65f3f', '#3c8d74', '#3b83a6', '#d2a339', '#687a47', '#8367a8',
+	'#ae5f84', '#638e8a', '#a27b3d', '#5270a0', '#8a754f', '#b26c4f',
+	'#4b8c63', '#86668d', '#aa8550', '#527c87', '#9d5c62', '#75864a',
+	'#7c6b59', '#4b8f91', '#9b6b9d', '#5f7c50', '#a66f3c', '#5678a6',
+	'#86734a', '#4e8875', '#a65c79',
+];
+const bapLayers = bapHabitats.map((name, index) => {
+	const id = `bap-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+	return {
+		id,
+		name,
+		file: `bap/${name}.pmtiles`,
+		sourceLayer: name,
+		color: bapColors[index],
+	};
+});
+const allLayers = [...analyticalLayers, ...bapLayers];
 
 const basemaps = {
 	'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -83,17 +131,21 @@ let vectorLayer;
 let vectorMap;
 let vectorMapReady;
 const layerOptions = document.querySelector('#layer-options');
+const bapLayerOptions = document.querySelector('#bap-layer-options');
+const layerLists = [layerOptions, bapLayerOptions];
 const selectedCount = document.querySelector('#selected-count');
+const bapSelectedCount = document.querySelector('#bap-selected-count');
 const mapStatus = document.querySelector('#map-status');
 const layerStyleStorageKey = 'site-explorer.layer-styles.v1';
 const defaultFillOpacity = 17;
 const layerStyles = loadLayerStyles();
 let draggedLayerEntry = null;
+let draggedLayerList = null;
 let dropTargetEntry = null;
 let dropBeforeTarget = true;
 
 function defaultLayerStyles() {
-	return Object.fromEntries(siteLayers.map(layer => [
+	return Object.fromEntries(allLayers.map(layer => [
 		layer.id,
 		{ color: layer.color, fillOpacity: defaultFillOpacity },
 	]));
@@ -111,7 +163,7 @@ function loadLayerStyles() {
 			throw new Error('Saved layer styles are not an object.');
 		}
 
-		for (const layer of siteLayers) {
+		for (const layer of allLayers) {
 			const storedStyle = storedStyles[layer.id];
 			if (storedStyle === undefined) continue;
 			if (
@@ -163,7 +215,7 @@ function ensureVectorMap() {
 			}
 		});
 		vectorMap.on('error', event => {
-			const failedLayer = siteLayers.find(layer => event.sourceId === `${layer.id}-source`);
+			const failedLayer = allLayers.find(layer => event.sourceId === `${layer.id}-source`);
 			if (!failedLayer) {
 				console.error('MapLibre overlay error:', event.error);
 				mapStatus.textContent = 'Unable to load vector tiles. Check the local server and PMTiles files.';
@@ -217,7 +269,10 @@ async function reorderMapLayers() {
 	if (!vectorLayer) return;
 	await vectorMapReady;
 
-	const orderedIds = [...layerOptions.querySelectorAll('.layer-entry')]
+	const orderedIds = [
+		...layerOptions.querySelectorAll('.layer-entry'),
+		...bapLayerOptions.querySelectorAll('.layer-entry'),
+	]
 		.map(entry => entry.dataset.layerId);
 	for (const layerId of orderedIds.reverse()) {
 		for (const suffix of ['fill', 'outline']) {
@@ -262,7 +317,7 @@ function makeLayerStyle(layer) {
 				id: `${layer.id}-fill`,
 				type: 'fill',
 				source: sourceId,
-				'source-layer': layer.id,
+				'source-layer': layer.sourceLayer ?? layer.id,
 				paint: {
 					'fill-color': style.color,
 					'fill-opacity': style.fillOpacity / 100,
@@ -283,7 +338,16 @@ function makeLayerStyle(layer) {
 	};
 }
 
-for (const layer of siteLayers) {
+function updateSelectedCounts() {
+	selectedCount.textContent = String(
+		analyticalLayers.filter(layer => selectedLayers.has(layer.id)).length,
+	);
+	bapSelectedCount.textContent = String(
+		bapLayers.filter(layer => selectedLayers.has(layer.id)).length,
+	);
+}
+
+function createLayerControl(layer, layerList) {
 	const style = layerStyles[layer.id];
 	const entry = document.createElement('div');
 	entry.className = 'layer-entry';
@@ -326,6 +390,7 @@ for (const layer of siteLayers) {
 			return;
 		}
 		draggedLayerEntry = entry;
+		draggedLayerList = layerList;
 		row.classList.add('is-dragging');
 		dropTargetEntry = null;
 		if (event.dataTransfer) {
@@ -334,7 +399,11 @@ for (const layer of siteLayers) {
 		}
 	});
 	row.addEventListener('dragover', event => {
-		if (!draggedLayerEntry || draggedLayerEntry === entry) return;
+		if (
+			!draggedLayerEntry
+			|| draggedLayerEntry === entry
+			|| draggedLayerList !== layerList
+		) return;
 		event.preventDefault();
 		dropTargetEntry?.querySelector('.layer-row')?.classList.remove('drop-before', 'drop-after');
 		dropTargetEntry = entry;
@@ -343,9 +412,13 @@ for (const layer of siteLayers) {
 		row.classList.add(dropBeforeTarget ? 'drop-before' : 'drop-after');
 	});
 	row.addEventListener('drop', event => {
-		if (!draggedLayerEntry || draggedLayerEntry === entry) return;
+		if (
+			!draggedLayerEntry
+			|| draggedLayerEntry === entry
+			|| draggedLayerList !== layerList
+		) return;
 		event.preventDefault();
-		layerOptions.insertBefore(
+		layerList.insertBefore(
 			draggedLayerEntry,
 			dropBeforeTarget ? entry : entry.nextSibling,
 		);
@@ -354,6 +427,7 @@ for (const layer of siteLayers) {
 		row.classList.remove('is-dragging');
 		dropTargetEntry?.querySelector('.layer-row')?.classList.remove('drop-before', 'drop-after');
 		draggedLayerEntry = null;
+		draggedLayerList = null;
 		dropTargetEntry = null;
 		void reorderMapLayers();
 	});
@@ -361,9 +435,11 @@ for (const layer of siteLayers) {
 	const styleButton = row.querySelector('.layer-swatch-button');
 	styleButton.addEventListener('click', () => {
 		const shouldOpen = settingsPanel.hidden;
-		for (const otherEntry of layerOptions.querySelectorAll('.layer-entry')) {
-			otherEntry.querySelector('.layer-settings').hidden = true;
-			otherEntry.querySelector('.layer-swatch-button').setAttribute('aria-expanded', 'false');
+		for (const list of layerLists) {
+			for (const otherEntry of list.querySelectorAll('.layer-entry')) {
+				otherEntry.querySelector('.layer-settings').hidden = true;
+				otherEntry.querySelector('.layer-swatch-button').setAttribute('aria-expanded', 'false');
+			}
 		}
 		if (shouldOpen) {
 			settingsPanel.hidden = false;
@@ -401,10 +477,17 @@ for (const layer of siteLayers) {
 		}
 
 		void syncMapLayer(layer, checkbox);
-		selectedCount.textContent = String(selectedLayers.size);
+		updateSelectedCounts();
 	});
 
-	layerOptions.append(entry);
+	layerList.append(entry);
+}
+
+for (const layer of analyticalLayers) {
+	createLayerControl(layer, layerOptions);
+}
+for (const layer of bapLayers) {
+	createLayerControl(layer, bapLayerOptions);
 }
 
 const coordinates = document.querySelector('#coordinates');
