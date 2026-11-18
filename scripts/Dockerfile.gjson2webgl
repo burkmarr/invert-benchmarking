@@ -1,0 +1,29 @@
+FROM ubuntu:24.04 AS build
+
+ARG TIPPECANOE_VERSION=2.79.0
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		build-essential \
+		ca-certificates \
+		git \
+		libsqlite3-dev \
+		zlib1g-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth 1 --branch "${TIPPECANOE_VERSION}" \
+	https://github.com/felt/tippecanoe.git /tmp/tippecanoe \
+	&& make -C /tmp/tippecanoe -j"$(nproc)" tippecanoe
+
+FROM ubuntu:24.04
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends \
+		ca-certificates \
+		libsqlite3-0 \
+		zlib1g \
+	&& rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /tmp/tippecanoe/tippecanoe /usr/local/bin/tippecanoe
+
+ENTRYPOINT ["tippecanoe"]

@@ -29,12 +29,33 @@ const dataDefs = {
     }
 }
 
+const siteDefs = {
+    bhs: {
+        file: "E:\\Tanyptera\\benchmarking\\data\\sites\\bhs.geojson",
+        nameFld: "SiteName",
+        fileOutSuffix: "bhs"
+    },
+    sssi: {
+        file: "E:\\Tanyptera\\benchmarking\\data\\sites\\sssi-in-lern.geojson",
+        nameFld: "SSSI_NAME",
+        fileOutSuffix: "sssi"
+    },
+    tetrads: {
+        file: "E:\\Tanyptera\\benchmarking\\data\\sites\\tetrads.geojson",
+        nameFld: "GridRef",
+        fileOutSuffix: "tetrads"
+    },
+    monads: {
+        file: "E:\\Tanyptera\\benchmarking\\data\\sites\\monads.geojson",
+        nameFld: "GridRef",
+        fileOutSuffix: "monads"
+    }
+}
+
 const lastNYears = 50;
 const currentYear = new Date().getFullYear();
-const sites = "E:\\Tanyptera\\benchmarking\\data\\sites\\bhs.geojson";
-const siteNameFld = "SiteName";
 const reportTxt = "E:\\Tanyptera\\benchmarking\\data\\sat-totals.txt";
-const sitesReportCsv = "E:\\Tanyptera\\benchmarking\\data\\sat-sites.csv";
+const sitesReportCsv = "E:\\Tanyptera\\benchmarking\\data\\sat-sites-<suffix>.csv";
 const osgb36Crs = '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs';
 
 function createCsvParser(filePath, requiredColumns) {
@@ -134,59 +155,90 @@ function getBounds(coordinates) {
     return bounds;
 }
 
-console.log(`Loading site boundaries from ${sites}`);
-const sitesGeoJson = JSON.parse(await readFile(sites, 'utf8'));
-if (!Array.isArray(sitesGeoJson.features)) {
-    throw new Error(`No feature collection found in ${sites}`);
+const siteAnalyses = new Map();
+for (const [siteType, siteDef] of Object.entries(siteDefs)) {
+    const startedAt = Date.now();
+    console.log(`${siteType}: loading site boundaries from ${siteDef.file}`);
+    const siteGeoJson = JSON.parse(await readFile(siteDef.file, 'utf8'));
+    if (!Array.isArray(siteGeoJson.features)) {
+        throw new Error(`No feature collection found in ${siteDef.file}`);
+    }
+
+    const siteIndex = new RBush();
+    siteIndex.load(siteGeoJson.features.map((feature) => {
+        if (!['Polygon', 'MultiPolygon'].includes(feature.geometry?.type)) {
+            throw new Error(`Unsupported site geometry type: ${feature.geometry?.type}`);
+        }
+        const rawSiteName = feature.properties?.[siteDef.nameFld];
+        const siteName = rawSiteName == null ? '' : String(rawSiteName).trim();
+        if (!siteName) {
+            throw new Error(`Missing site name field "${siteDef.nameFld}" in ${siteDef.file}`);
+        }
+        return {
+            ...getBounds(feature.geometry.coordinates),
+            feature,
+            siteName,
+        };
+    }));
+    siteAnalyses.set(siteType, {
+        definition: siteDef,
+        index: siteIndex,
+        siteCountsByName: new Map(),
+    });
+    console.log(
+        `${siteType}: loaded ${siteGeoJson.features.length.toLocaleString()} site boundaries `
+        + `in ${((Date.now() - startedAt) / 1000).toFixed(1)} seconds`,
+    );
 }
 
-const siteIndex = new RBush();
-siteIndex.load(sitesGeoJson.features.map((feature) => {
-    if (!['Polygon', 'MultiPolygon'].includes(feature.geometry?.type)) {
-        throw new Error(`Unsupported site geometry type: ${feature.geometry?.type}`);
-    }
-    const siteName = feature.properties?.[siteNameFld]?.trim();
-    if (!siteName) {
-        throw new Error(`Missing site name field "${siteNameFld}" in ${sites}`);
-    }
-    return {
-        ...getBounds(feature.geometry.coordinates),
-        feature,
-        siteName,
-    };
-}));
-console.log(`Loaded ${sitesGeoJson.features.length.toLocaleString()} site boundaries`);
-
-const siteCountsByName = new Map();
 const siteReportSats = new Set();
-function countRecordAtSites(gridRef, sats, taxonKey) {
-    for (const sat of sats) siteReportSats.add(sat);
+const noSats = new Set();
+function countRecordAtSites(gridRef, sats, taxonKey, groupPrefix) {
+    const satValues = sats ?? noSats;
+    for (const sat of satValues) siteReportSats.add(sat);
 
     const point = gridRefToWgs84(gridRef);
     if (!point) return;
 
     const [longitude, latitude] = point;
-    const candidates = siteIndex.search({
-        minX: longitude,
-        minY: latitude,
-        maxX: longitude,
-        maxY: latitude,
-    });
-    const overlappingSiteNames = new Set();
-    for (const candidate of candidates) {
-        if (booleanPointInPolygon(point, candidate.feature)) {
-            overlappingSiteNames.add(candidate.siteName);
+    for (const siteAnalysis of siteAnalyses.values()) {
+        const candidates = siteAnalysis.index.search({
+            minX: longitude,
+            minY: latitude,
+            maxX: longitude,
+            maxY: latitude,
+        });
+        const overlappingSiteNames = new Set();
+        for (const candidate of candidates) {
+            if (booleanPointInPolygon(point, candidate.feature)) {
+                overlappingSiteNames.add(candidate.siteName);
+            }
         }
-    }
 
-    for (const siteName of overlappingSiteNames) {
-        const countsBySat = siteCountsByName.get(siteName) ?? new Map();
-        for (const sat of sats) {
-            const taxa = countsBySat.get(sat) ?? new Set();
-            taxa.add(taxonKey);
-            countsBySat.set(sat, taxa);
+        for (const siteName of overlappingSiteNames) {
+            const siteCountsByName = siteAnalysis.siteCountsByName;
+            const siteCounts = siteCountsByName.get(siteName) ?? {
+                countsBySat: new Map(),
+                recsN: 0,
+                recsSatN: 0,
+                groups: new Map(),
+            };
+            siteCounts.recsN += 1;
+            const groupCounts = siteCounts.groups.get(groupPrefix) ?? { recsN: 0, recsSatN: 0 };
+            groupCounts.recsN += 1;
+            if (satValues.size > 0) {
+                siteCounts.recsSatN += 1;
+                groupCounts.recsSatN += 1;
+            }
+
+            for (const sat of satValues) {
+                const taxa = siteCounts.countsBySat.get(sat) ?? new Set();
+                taxa.add(taxonKey);
+                siteCounts.countsBySat.set(sat, taxa);
+            }
+            siteCounts.groups.set(groupPrefix, groupCounts);
+            siteCountsByName.set(siteName, siteCounts);
         }
-        siteCountsByName.set(siteName, countsBySat);
     }
 }
 
@@ -241,10 +293,10 @@ async function countUniqueTaxaBySat(dataDef, group) {
         const sats = taxonKey ? satsByTaxon.get(taxonKey) : undefined;
         if (sats?.size) {
             recordCounts.includedWithSat += 1;
-            countRecordAtSites(record[dataDef.recsGrFld], sats, taxonKey);
         } else {
             recordCounts.includedWithoutSat += 1;
         }
+        countRecordAtSites(record[dataDef.recsGrFld], sats, taxonKey, dataDef.csvColPrefix);
 
         for (const sat of sats ?? []) {
             const taxa = taxaBySat.get(sat) ?? new Set();
@@ -318,22 +370,41 @@ function escapeCsv(value) {
 }
 
 const siteSatNames = [...siteReportSats].sort((first, second) => first.localeCompare(second));
-const siteRows = [
-    ['site', ...siteSatNames, 'satN', 'satTaxaN'],
-    ...[...siteCountsByName]
-        .sort(([first], [second]) => first.localeCompare(second))
-        .map(([siteName, countsBySat]) => {
-            const satCounts = [...countsBySat.values()];
-            return [
-                siteName,
-                ...siteSatNames.map(sat => countsBySat.get(sat)?.size ?? ''),
-                satCounts.length,
-                satCounts.reduce((total, taxa) => total + taxa.size, 0),
-            ];
-        }),
-];
-await writeFile(
-    sitesReportCsv,
-    `${siteRows.map(row => row.map(escapeCsv).join(',')).join('\n')}\n`,
-    'utf8',
-);
+const groupRecordColumns = Object.values(dataDefs).flatMap(({ csvColPrefix }) => [
+    `${csvColPrefix}RecsN`,
+    `${csvColPrefix}RecsSatN`,
+]);
+for (const [siteType, siteAnalysis] of siteAnalyses) {
+    const startedAt = Date.now();
+    const siteCountsByName = siteAnalysis.siteCountsByName;
+    const siteRows = [
+        ['site', ...siteSatNames, 'satN', 'satTaxaN', 'recsN', 'recsSatN', ...groupRecordColumns],
+        ...[...siteCountsByName]
+            .sort(([first], [second]) => first.localeCompare(second))
+            .map(([siteName, siteCounts]) => {
+                const satCounts = [...siteCounts.countsBySat.values()];
+                const groupCounts = Object.values(dataDefs).flatMap(({ csvColPrefix }) => {
+                    const counts = siteCounts.groups.get(csvColPrefix) ?? { recsN: 0, recsSatN: 0 };
+                    return [counts.recsN, counts.recsSatN];
+                });
+                return [
+                    siteName,
+                    ...siteSatNames.map(sat => siteCounts.countsBySat.get(sat)?.size ?? ''),
+                    satCounts.length,
+                    satCounts.reduce((total, taxa) => total + taxa.size, 0),
+                    siteCounts.recsN,
+                    siteCounts.recsSatN,
+                    ...groupCounts,
+                ];
+            }),
+    ];
+    const outputFile = sitesReportCsv.replace('<suffix>', siteAnalysis.definition.fileOutSuffix);
+    await writeFile(
+        outputFile,
+        `${siteRows.map(row => row.map(escapeCsv).join(',')).join('\n')}\n`,
+        'utf8',
+    );
+    console.log(
+        `${siteType}: wrote ${outputFile} in ${((Date.now() - startedAt) / 1000).toFixed(1)} seconds`,
+    );
+}
