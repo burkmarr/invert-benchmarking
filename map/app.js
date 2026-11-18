@@ -137,12 +137,25 @@ const selectedCount = document.querySelector('#selected-count');
 const bapSelectedCount = document.querySelector('#bap-selected-count');
 const mapStatus = document.querySelector('#map-status');
 const layerStyleStorageKey = 'site-explorer.layer-styles.v1';
-const defaultFillOpacity = 17;
+const defaultFillOpacity = 60;
 const layerStyles = loadLayerStyles();
 let draggedLayerEntry = null;
 let draggedLayerList = null;
 let dropTargetEntry = null;
 let dropBeforeTarget = true;
+
+function setupLayerAccordion(buttonId, panelId) {
+	const button = document.querySelector(buttonId);
+	const panel = document.querySelector(panelId);
+	button.addEventListener('click', () => {
+		const expanded = button.getAttribute('aria-expanded') === 'true';
+		button.setAttribute('aria-expanded', String(!expanded));
+		panel.hidden = expanded;
+	});
+}
+
+setupLayerAccordion('#layers-toggle', '#layer-options');
+setupLayerAccordion('#bap-layers-toggle', '#bap-layer-options');
 
 function defaultLayerStyles() {
 	return Object.fromEntries(allLayers.map(layer => [
@@ -362,8 +375,7 @@ function createLayerControl(layer, layerList) {
 		+ `aria-controls="layer-settings-${layer.id}" aria-expanded="false">`
 		+ `<span class="layer-swatch" style="--swatch-color:${style.color};--swatch-background:${style.color}20"></span>`
 		+ '</button>'
-		+ `<label class="layer-label" for="layer-${layer.id}">${layer.name}</label>`
-		+ '<span class="layer-kind">PMT</span>';
+		+ `<label class="layer-label" for="layer-${layer.id}">${layer.name}</label>`;
 
 	const settingsPanel = document.createElement('div');
 	settingsPanel.id = `layer-settings-${layer.id}`;

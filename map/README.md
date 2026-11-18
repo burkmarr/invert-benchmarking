@@ -13,6 +13,7 @@ settings are saved in the browser's local storage.
 The **BAP habitats** section lists the habitat PMTiles in `data/bap/`; these
 layers can be styled and reordered within their section and always render below
 the Analytical areas.
+Click either layer-section heading to collapse or expand its controls.
 Use the **Recentre** button beside the basemap heading to centre on the LERN
 boundary, zoomed one level closer than its fitted extent.
 

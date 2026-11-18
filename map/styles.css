@@ -143,6 +143,62 @@ body {
 	margin-bottom: 15px;
 }
 
+.layer-section-toggle {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0;
+	color: inherit;
+	background: transparent;
+	border: 0;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.layer-section-toggle:hover .layer-section-title {
+	color: #28735e;
+}
+
+.layer-section-toggle:focus-visible {
+	outline: 2px solid #378268;
+	outline-offset: 3px;
+}
+
+.layer-section-heading-copy {
+	min-width: 0;
+}
+
+.layer-section-title {
+	display: block;
+	font-size: 13px;
+	font-weight: 680;
+}
+
+.layer-section-summary {
+	display: block;
+	margin-top: 3px;
+	color: #8a969d;
+	font-size: 10px;
+}
+
+.accordion-chevron {
+	width: 8px;
+	height: 8px;
+	flex: 0 0 auto;
+	margin: 0 4px 4px 12px;
+	border-right: 1.5px solid #87949b;
+	border-bottom: 1.5px solid #87949b;
+	transform: rotate(45deg);
+	transition: transform 120ms ease;
+}
+
+.layer-section-toggle[aria-expanded="false"] .accordion-chevron {
+	margin-bottom: 0;
+	transform: rotate(-45deg);
+}
+
 .basemap-section-heading {
 	display: flex;
 	align-items: center;
@@ -187,6 +243,10 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
+}
+
+.layer-list[hidden] {
+	display: none;
 }
 
 .basemap-greyscale-option {
@@ -296,11 +356,6 @@ body {
 	flex: 1;
 	cursor: pointer;
 	font-weight: 550;
-}
-
-.layer-kind {
-	color: #96a2a8;
-	font-size: 9px;
 }
 
 .layer-settings {

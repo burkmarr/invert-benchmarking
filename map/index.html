@@ -61,22 +61,26 @@
 
 			<div class="layer-groups">
 				<section class="control-section layer-section" aria-labelledby="layers-heading">
-					<div class="section-heading">
-						<div>
-							<h3 id="layers-heading">Analytical areas</h3>
-							<p><span id="selected-count">0</span> selected · drag rows to reorder, click swatch to restyle</p>
-						</div>
-					</div>
+					<button id="layers-toggle" class="section-heading layer-section-toggle" type="button"
+						aria-expanded="true" aria-controls="layer-options">
+						<span class="layer-section-heading-copy">
+							<span class="layer-section-title" id="layers-heading" role="heading" aria-level="3">Analytical areas</span>
+							<span class="layer-section-summary"><span id="selected-count">0</span> selected · drag rows to reorder, click swatch to restyle</span>
+						</span>
+						<span class="accordion-chevron" aria-hidden="true"></span>
+					</button>
 					<div class="layer-list" id="layer-options"></div>
 				</section>
 
 				<section class="control-section layer-section" aria-labelledby="bap-layers-heading">
-					<div class="section-heading">
-						<div>
-							<h3 id="bap-layers-heading">BAP habitats</h3>
-							<p><span id="bap-selected-count">0</span> selected · drag rows to reorder, click swatch to restyle</p>
-						</div>
-					</div>
+					<button id="bap-layers-toggle" class="section-heading layer-section-toggle" type="button"
+						aria-expanded="true" aria-controls="bap-layer-options">
+						<span class="layer-section-heading-copy">
+							<span class="layer-section-title" id="bap-layers-heading" role="heading" aria-level="3">BAP habitats</span>
+							<span class="layer-section-summary"><span id="bap-selected-count">0</span> selected · drag rows to reorder, click swatch to restyle</span>
+						</span>
+						<span class="accordion-chevron" aria-hidden="true"></span>
+					</button>
 					<div class="layer-list" id="bap-layer-options"></div>
 				</section>
 			</div>
