@@ -40,6 +40,8 @@ the selected metric column and its original, untransformed value.
 The selected Benchmarking layer, metric, transform, colour ramp, and
 null-value visibility setting are restored from browser storage on the next
 visit.
+When vector layers are loading, a map overlay indicates which layer is being
+loaded and clears after its visible tiles finish loading.
 Click a section heading to collapse or expand it.
 Use **Recentre** to centre on the LERN boundary, zoomed one level closer than
 its fitted extent. **Download** saves the visible map area as a PNG, including

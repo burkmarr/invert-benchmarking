@@ -133,6 +133,9 @@ const basemapGreyscaleControl = document.querySelector('#basemap-greyscale');
 const basemapOpacityInput = document.querySelector('#basemap-opacity');
 const basemapOpacityValue = document.querySelector('#basemap-opacity-value');
 const mapStatus = document.querySelector('#map-status');
+const mapShell = document.querySelector('.map-shell');
+const mapLoadingIndicator = document.querySelector('#map-loading');
+const mapLoadingMessage = document.querySelector('#map-loading-message');
 const basemapDisplayOptionsStorageKey = 'site-explorer.basemap-options.v1';
 
 function defaultBasemapDisplayOptions() {
@@ -233,7 +236,62 @@ const selectedLayers = new Set();
 let vectorLayer;
 let vectorMap;
 let vectorMapReady;
+const pendingLayerLoads = new Map();
+let layerLoadRequest = 0;
 let featurePopupRequest = 0;
+
+function updateLayerLoadingIndicator() {
+	const layerNames = [...pendingLayerLoads.keys()]
+		.map(layerId => allLayers.find(layer => layer.id === layerId)?.name)
+		.filter(Boolean);
+	mapLoadingIndicator.hidden = layerNames.length === 0;
+	mapShell.setAttribute('aria-busy', String(layerNames.length > 0));
+	mapLoadingMessage.textContent = layerNames.length === 0
+		? 'Loading map layers...'
+		: layerNames.length === 1
+			? `Loading ${layerNames[0]}...`
+			: `Loading ${layerNames.length} map layers...`;
+}
+
+function beginLayerLoad(layer) {
+	const request = ++layerLoadRequest;
+	pendingLayerLoads.set(layer.id, { request, waitingForSource: false });
+	updateLayerLoadingIndicator();
+	return request;
+}
+
+function waitForLayerSource(layer, request) {
+	const pendingLoad = pendingLayerLoads.get(layer.id);
+	if (!pendingLoad || pendingLoad.request !== request) return;
+	pendingLoad.waitingForSource = true;
+}
+
+function finishLayerLoad(layerId, request) {
+	const pendingLoad = pendingLayerLoads.get(layerId);
+	if (!pendingLoad || pendingLoad.request !== request) return;
+	pendingLayerLoads.delete(layerId);
+	updateLayerLoadingIndicator();
+}
+
+function cancelLayerLoad(layerId) {
+	if (!pendingLayerLoads.delete(layerId)) return;
+	updateLayerLoadingIndicator();
+}
+
+function finishLoadedLayerSources() {
+	if (!vectorMap) return;
+	for (const [layerId, pendingLoad] of pendingLayerLoads) {
+		const sourceId = `${layerId}-source`;
+		if (
+			pendingLoad.waitingForSource
+			&& vectorMap.getSource(sourceId)
+			&& vectorMap.isSourceLoaded(sourceId)
+		) {
+			finishLayerLoad(layerId, pendingLoad.request);
+		}
+	}
+}
+
 map.on('click', event => {
 	if (vectorMap) void handleVectorFeatureClick(event);
 });
@@ -517,7 +575,15 @@ function ensureVectorMap() {
 			}
 			console.error(`Map layer "${failedLayer.name}" failed to load:`, event.error);
 			mapStatus.textContent = `Unable to load ${failedLayer.name}. Check the local server and PMTiles file.`;
+			finishLayerLoad(failedLayer.id, pendingLayerLoads.get(failedLayer.id)?.request);
 		});
+		vectorMap.on('sourcedata', event => {
+			if (event.sourceDataType !== 'content' || !event.isSourceLoaded) return;
+			const layer = allLayers.find(candidate => event.sourceId === `${candidate.id}-source`);
+			const pendingLoad = layer && pendingLayerLoads.get(layer.id);
+			if (pendingLoad?.waitingForSource) finishLayerLoad(layer.id, pendingLoad.request);
+		});
+		vectorMap.on('idle', finishLoadedLayerSources);
 	}
 
 	return vectorMapReady;
@@ -706,13 +772,17 @@ async function reorderMapLayers() {
 }
 
 async function syncMapLayer(layer, checkbox) {
+	const loadRequest = checkbox.checked ? beginLayerLoad(layer) : null;
+	if (!checkbox.checked) cancelLayerLoad(layer.id);
+
 	try {
 		if (checkbox.checked) {
 			await ensureVectorMap();
 			if (checkbox.checked) {
 				addMapLayer(layer);
+				waitForLayerSource(layer, loadRequest);
 				await reorderMapLayers();
-			}
+			} else finishLayerLoad(layer.id, loadRequest);
 		} else if (vectorLayer) {
 			await vectorMapReady;
 			if (!checkbox.checked) removeMapLayer(layer);
@@ -720,6 +790,7 @@ async function syncMapLayer(layer, checkbox) {
 	} catch (error) {
 		console.error(`Unable to update map layer "${layer.name}":`, error);
 		mapStatus.textContent = `Unable to load ${layer.name}. Check the local server and PMTiles file.`;
+		if (loadRequest !== null) finishLayerLoad(layer.id, loadRequest);
 	}
 }
 
@@ -1299,6 +1370,7 @@ function updateBenchmarkLegend(layer, column, minimum, maximum) {
 
 async function syncSelectedBenchmarkLayer(request) {
 	const layer = benchmarkingLayers.find(candidate => candidate.id === activeBenchmarkLayerId);
+	const loadRequest = layer ? beginLayerLoad(layer) : null;
 	try {
 		if (layer) {
 			await ensureVectorMap();
@@ -1342,6 +1414,7 @@ async function syncSelectedBenchmarkLayer(request) {
 
 		if (request !== benchmarkLayerRequest) return;
 		addMapLayer(layer);
+		waitForLayerSource(layer, loadRequest);
 		await reorderMapLayers();
 	} catch (error) {
 		if (request !== benchmarkLayerRequest) return;
@@ -1350,11 +1423,13 @@ async function syncSelectedBenchmarkLayer(request) {
 		mapStatus.textContent = layer
 			? `Unable to load ${layer.name}. Check the local server and PMTiles file.`
 			: 'Unable to update the benchmarking layers.';
+		if (layer && loadRequest !== null) finishLayerLoad(layer.id, loadRequest);
 	}
 }
 
 function selectBenchmarkLayer(layerId) {
 	invalidateFeaturePopup();
+	for (const layer of benchmarkingLayers) cancelLayerLoad(layer.id);
 	activeBenchmarkLayerId = layerId;
 	for (const layer of benchmarkingLayers) selectedLayers.delete(layer.id);
 	if (layerId) selectedLayers.add(layerId);

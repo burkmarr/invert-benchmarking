@@ -549,6 +549,56 @@ body {
 	background: #e5ebea;
 }
 
+.map-loading {
+	position: absolute;
+	z-index: 700;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	background: rgb(255 255 255 / 28%);
+	pointer-events: none;
+}
+
+.map-loading[hidden] {
+	display: none;
+}
+
+.map-loading-card {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 11px 15px;
+	color: #263d49;
+	background: rgb(255 255 255 / 96%);
+	border: 1px solid #d5e0dc;
+	border-radius: 8px;
+	box-shadow: 0 3px 12px rgb(31 56 72 / 16%);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.map-loading-spinner {
+	width: 17px;
+	height: 17px;
+	flex: 0 0 auto;
+	border: 2px solid #cfe0d8;
+	border-top-color: #378268;
+	border-radius: 50%;
+	animation: map-loading-spin 750ms linear infinite;
+}
+
+@keyframes map-loading-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.map-loading-spinner {
+		animation: none;
+	}
+}
+
 .benchmark-legend {
 	position: absolute;
 	z-index: 600;

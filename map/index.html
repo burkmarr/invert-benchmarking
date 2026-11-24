@@ -179,6 +179,12 @@
 
 		<section class="map-shell" aria-label="Interactive map">
 			<div id="map"></div>
+			<div class="map-loading" id="map-loading" role="status" aria-live="polite" hidden>
+				<div class="map-loading-card">
+					<span class="map-loading-spinner" aria-hidden="true"></span>
+					<span id="map-loading-message">Loading map layer...</span>
+				</div>
+			</div>
 			<div class="benchmark-legend" id="benchmark-legend" hidden role="group" aria-label="Benchmarking colour legend">
 				<p class="benchmark-legend-title" id="benchmark-legend-title"></p>
 				<div class="benchmark-legend-gradient" id="benchmark-legend-gradient" aria-hidden="true"></div>
