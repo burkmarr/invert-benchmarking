@@ -92,8 +92,32 @@ const bapLayers = bapHabitats.map((name, index) => {
 		color: bapColors[index],
 	};
 });
-const allLayers = [...benchmarkingLayers, ...otherLayers, ...bapLayers];
+const lnrsLayers = [
+	{
+		id: 'lnrs-apib',
+		name: 'Areas of Particular Importance for Biodiversity (APIB)',
+		file: 'lnrs/Areas_of_Particular_Importance_for_Biodiversity_(APIB).pmtiles',
+		sourceLayer: 'Areas_of_Particular_Importance_for_Biodiversity_(APIB)',
+		color: '#a65f3f',
+	},
+	{
+		id: 'lnrs-potential-apib',
+		name: 'Areas that Could Become of Particular Importance',
+		file: 'lnrs/Areas_that_Could_Become_of_Particular_Importance.pmtiles',
+		sourceLayer: 'Areas_that_Could_Become_of_Particular_Importance',
+		color: '#527c87',
+	},
+	{
+		id: 'lnrs-potential-measures',
+		name: 'Potential Measures',
+		file: 'lnrs/PotentialMeasures.pmtiles',
+		sourceLayer: 'PotentialMeasures',
+		color: '#75864a',
+	},
+];
+const allLayers = [...benchmarkingLayers, ...otherLayers, ...bapLayers, ...lnrsLayers];
 const benchmarkingLayerIds = new Set(benchmarkingLayers.map(layer => layer.id));
+const attributePopupLayerIds = new Set([...bapLayers, ...lnrsLayers].map(layer => layer.id));
 
 const basemaps = {
 	'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -239,6 +263,9 @@ let vectorMapReady;
 const pendingLayerLoads = new Map();
 let layerLoadRequest = 0;
 let featurePopupRequest = 0;
+const featureHighlightLayerId = 'feature-attribute-highlight';
+let highlightedFeatureSourceId = null;
+let highlightedFeatureButton = null;
 
 function updateLayerLoadingIndicator() {
 	const layerNames = [...pendingLayerLoads.keys()]
@@ -298,10 +325,12 @@ map.on('click', event => {
 const benchmarkingLayerOptions = document.querySelector('#layer-options');
 const otherLayerOptions = document.querySelector('#other-layer-options');
 const bapLayerOptions = document.querySelector('#bap-layer-options');
-const layerLists = [benchmarkingLayerOptions, otherLayerOptions, bapLayerOptions];
+const lnrsLayerOptions = document.querySelector('#lnrs-layer-options');
+const layerLists = [benchmarkingLayerOptions, otherLayerOptions, bapLayerOptions, lnrsLayerOptions];
 const selectedCount = document.querySelector('#selected-count');
 const otherSelectedCount = document.querySelector('#other-selected-count');
 const bapSelectedCount = document.querySelector('#bap-selected-count');
+const lnrsSelectedCount = document.querySelector('#lnrs-selected-count');
 const downloadMapButton = document.querySelector('#download-map');
 const benchmarkLegend = document.querySelector('#benchmark-legend');
 const benchmarkLegendTitle = document.querySelector('#benchmark-legend-title');
@@ -386,6 +415,7 @@ setupLayerAccordion('#layers-toggle', '#benchmarking-panel');
 setupLayerAccordion('#basemap-toggle', '#basemap-panel');
 setupLayerAccordion('#other-layers-toggle', '#other-layer-options');
 setupLayerAccordion('#bap-layers-toggle', '#bap-layer-options');
+setupLayerAccordion('#lnrs-layers-toggle', '#lnrs-layer-options');
 
 benchmarkColourInput.value = benchmarkSharedStyle.color;
 benchmarkOpacityInput.value = String(benchmarkSharedStyle.fillOpacity);
@@ -601,12 +631,14 @@ function addMapLayer(layer) {
 }
 
 function removeMapLayer(layer) {
+	const sourceId = `${layer.id}-source`;
+	if (highlightedFeatureSourceId === sourceId) clearFeatureHighlight();
+
 	for (const suffix of ['fill', 'outline']) {
 		const layerId = `${layer.id}-${suffix}`;
 		if (vectorMap.getLayer(layerId)) vectorMap.removeLayer(layerId);
 	}
 
-	const sourceId = `${layer.id}-source`;
 	if (vectorMap.getSource(sourceId)) vectorMap.removeSource(sourceId);
 }
 
@@ -636,34 +668,180 @@ function getFeatureSiteName(layer, properties) {
 
 function invalidateFeaturePopup() {
 	featurePopupRequest += 1;
+	clearFeatureHighlight();
 	map.closePopup();
+}
+
+function clearFeatureHighlight() {
+	if (vectorMap?.getLayer(featureHighlightLayerId)) {
+		vectorMap.removeLayer(featureHighlightLayerId);
+	}
+	highlightedFeatureSourceId = null;
+	if (highlightedFeatureButton) {
+		highlightedFeatureButton.textContent = 'Highlight boundary';
+		highlightedFeatureButton.setAttribute('aria-pressed', 'false');
+		highlightedFeatureButton = null;
+	}
+}
+
+function getFeatureHighlightFilter(feature) {
+	if (feature.id !== undefined && feature.id !== null) {
+		return ['==', ['id'], feature.id];
+	}
+
+	const propertyFilters = Object.entries(feature.properties ?? {})
+		.filter(([, value]) => (
+			value === null
+			|| ['string', 'number', 'boolean'].includes(typeof value)
+		))
+		.map(([key, value]) => ['==', ['get', key], value]);
+	if (propertyFilters.length === 0) return null;
+	return propertyFilters.length === 1 ? propertyFilters[0] : ['all', ...propertyFilters];
+}
+
+function highlightFeatureBoundary(layer, feature, button) {
+	clearFeatureHighlight();
+	const sourceId = `${layer.id}-source`;
+	const filter = getFeatureHighlightFilter(feature);
+	if (!vectorMap?.getSource(sourceId) || !filter) {
+		mapStatus.textContent = `Unable to highlight ${layer.name}; the feature is no longer available.`;
+		return;
+	}
+
+	try {
+		vectorMap.addLayer({
+			id: featureHighlightLayerId,
+			type: 'line',
+			source: sourceId,
+			'source-layer': layer.sourceLayer ?? layer.id,
+			filter,
+			paint: {
+				'line-color': '#fff200',
+				'line-width': ['interpolate', ['linear'], ['zoom'], 0, 2, 14, 5],
+				'line-opacity': 1,
+			},
+		});
+		highlightedFeatureSourceId = sourceId;
+		highlightedFeatureButton = button;
+		button.textContent = 'Boundary highlighted';
+		button.setAttribute('aria-pressed', 'true');
+	} catch (error) {
+		console.error(`Unable to highlight feature in "${layer.name}":`, error);
+		mapStatus.textContent = `Unable to highlight a feature in ${layer.name}.`;
+	}
+}
+
+function makeFeaturePopupDraggable(popup, content) {
+	const dragHandle = content.querySelector('.map-feature-popup-drag-handle');
+	if (!dragHandle) return;
+
+	dragHandle.addEventListener('pointerdown', event => {
+		if (event.button !== 0) return;
+		event.preventDefault();
+		event.stopPropagation();
+
+		const pointerId = event.pointerId;
+		const startX = event.clientX;
+		const startY = event.clientY;
+		const startPoint = map.latLngToContainerPoint(popup.getLatLng());
+		const wasDraggingEnabled = map.dragging.enabled();
+		const originalAutoPan = popup.options.autoPan;
+		dragHandle.setPointerCapture(pointerId);
+		map.dragging.disable();
+		popup.options.autoPan = false;
+
+		const onPointerMove = moveEvent => {
+			if (moveEvent.pointerId !== pointerId) return;
+			const point = startPoint.add([
+				moveEvent.clientX - startX,
+				moveEvent.clientY - startY,
+			]);
+			popup.setLatLng(map.containerPointToLatLng(point));
+		};
+		const finishDragging = finishEvent => {
+			if (finishEvent.pointerId !== pointerId) return;
+			window.removeEventListener('pointermove', onPointerMove);
+			window.removeEventListener('pointerup', finishDragging);
+			window.removeEventListener('pointercancel', finishDragging);
+			popup.options.autoPan = originalAutoPan;
+			if (wasDraggingEnabled) map.dragging.enable();
+		};
+
+		window.addEventListener('pointermove', onPointerMove);
+		window.addEventListener('pointerup', finishDragging);
+		window.addEventListener('pointercancel', finishDragging);
+	});
+
+	L.DomEvent.disableClickPropagation(dragHandle);
 }
 
 function appendFeaturePopupRow(content, label, value) {
 	const row = document.createElement('p');
+	row.className = 'map-feature-popup-row';
 	const labelElement = document.createElement('strong');
 	labelElement.textContent = `${label}: `;
-	row.append(labelElement, document.createTextNode(value));
+	row.append(labelElement, document.createTextNode(String(value)));
 	content.append(row);
 }
 
+function formatFeatureAttribute(value) {
+	if (value === null) return 'null';
+	if (typeof value === 'object') return JSON.stringify(value);
+	return String(value);
+}
+
+function appendFeatureAttributes(content, layer, feature) {
+	const section = document.createElement('section');
+	section.className = 'map-feature-popup-section';
+	const heading = document.createElement('h3');
+	heading.textContent = layer.name;
+	section.append(heading);
+
+	const highlightButton = document.createElement('button');
+	highlightButton.className = 'map-feature-highlight-button';
+	highlightButton.type = 'button';
+	highlightButton.textContent = 'Highlight boundary';
+	highlightButton.setAttribute('aria-pressed', 'false');
+	highlightButton.addEventListener('click', event => {
+		event.stopPropagation();
+		highlightFeatureBoundary(layer, feature, highlightButton);
+	});
+	section.append(highlightButton);
+
+	const properties = feature.properties ?? {};
+	const entries = Object.entries(properties);
+	if (entries.length === 0) {
+		const emptyMessage = document.createElement('p');
+		emptyMessage.textContent = 'No attributes available.';
+		section.append(emptyMessage);
+	} else {
+		for (const [label, value] of entries) {
+			appendFeaturePopupRow(section, label, formatFeatureAttribute(value));
+		}
+	}
+
+	content.append(section);
+}
+
 async function handleVectorFeatureClick(event) {
-	const queryableLayerIds = allLayers.flatMap(layer => (
-		['fill', 'outline']
+	clearFeatureHighlight();
+	const queryableLayerIds = allLayers.flatMap(layer => {
+		const suffixes = attributePopupLayerIds.has(layer.id)
+			? ['fill']
+			: ['fill', 'outline'];
+		return suffixes
 			.map(suffix => `${layer.id}-${suffix}`)
-			.filter(layerId => vectorMap.getLayer(layerId))
-	));
+			.filter(layerId => vectorMap.getLayer(layerId));
+	});
 	if (queryableLayerIds.length === 0) return;
 
-	const feature = vectorMap.queryRenderedFeatures(
+	const features = vectorMap.queryRenderedFeatures(
 		vectorMap.project([event.latlng.lng, event.latlng.lat]),
 		{
 			layers: queryableLayerIds,
 		},
-	).find(candidate => allLayers.some(layer => (
-		candidate.layer.id === `${layer.id}-fill`
-		|| candidate.layer.id === `${layer.id}-outline`
-	)));
+	);
+	const feature = features[0];
 	if (!feature) {
 		invalidateFeaturePopup();
 		return;
@@ -676,6 +854,33 @@ async function handleVectorFeatureClick(event) {
 	if (!layer) return;
 
 	const request = ++featurePopupRequest;
+	if (attributePopupLayerIds.has(layer.id)) {
+		const content = document.createElement('div');
+		content.className = 'map-feature-popup';
+		const dragHandle = document.createElement('div');
+		dragHandle.className = 'map-feature-popup-drag-handle';
+		dragHandle.textContent = 'Feature information · drag to move';
+		dragHandle.title = 'Drag to move this information box';
+		content.append(dragHandle);
+		for (const candidate of features) {
+			const candidateLayer = allLayers.find(item => (
+				candidate.layer.id === `${item.id}-fill`
+				|| candidate.layer.id === `${item.id}-outline`
+			));
+			if (!candidateLayer || !attributePopupLayerIds.has(candidateLayer.id)) continue;
+			appendFeatureAttributes(content, candidateLayer, candidate);
+		}
+
+		if (request !== featurePopupRequest) return;
+		L.DomEvent.disableClickPropagation(content);
+		const popup = L.popup()
+			.setLatLng(event.latlng)
+			.setContent(content);
+		makeFeaturePopupDraggable(popup, content);
+		popup.openOn(map);
+		return;
+	}
+
 	const properties = feature.properties ?? {};
 	const siteName = getFeatureSiteName(layer, properties);
 	const siteKey = layer.siteProperty && properties[layer.siteProperty] !== undefined
@@ -761,6 +966,7 @@ async function reorderMapLayers() {
 		...benchmarkingLayerOptions.querySelectorAll('.layer-entry'),
 		...otherLayerOptions.querySelectorAll('.layer-entry'),
 		...bapLayerOptions.querySelectorAll('.layer-entry'),
+		...lnrsLayerOptions.querySelectorAll('.layer-entry'),
 	]
 		.map(entry => entry.dataset.layerId);
 	for (const layerId of orderedIds.reverse()) {
@@ -768,6 +974,9 @@ async function reorderMapLayers() {
 			const mapLayerId = `${layerId}-${suffix}`;
 			if (vectorMap.getLayer(mapLayerId)) vectorMap.moveLayer(mapLayerId);
 		}
+	}
+	if (vectorMap.getLayer(featureHighlightLayerId)) {
+		vectorMap.moveLayer(featureHighlightLayerId);
 	}
 }
 
@@ -1002,7 +1211,7 @@ function makeLayerStyle(layer) {
 				id: `${layer.id}-outline`,
 				type: 'line',
 				source: sourceId,
-				'source-layer': layer.id,
+				'source-layer': layer.sourceLayer ?? layer.id,
 				...(siteFilter ? { filter: siteFilter } : {}),
 				paint: {
 					'line-color': outlineColor,
@@ -1023,6 +1232,9 @@ function updateSelectedCounts() {
 	);
 	bapSelectedCount.textContent = String(
 		bapLayers.filter(layer => selectedLayers.has(layer.id)).length,
+	);
+	lnrsSelectedCount.textContent = String(
+		lnrsLayers.filter(layer => selectedLayers.has(layer.id)).length,
 	);
 }
 
@@ -1666,6 +1878,9 @@ for (const layer of otherLayers) {
 }
 for (const layer of bapLayers) {
 	createLayerControl(layer, bapLayerOptions);
+}
+for (const layer of lnrsLayers) {
+	createLayerControl(layer, lnrsLayerOptions);
 }
 
 const coordinates = document.querySelector('#coordinates');

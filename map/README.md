@@ -12,8 +12,9 @@ Drag the polygon layer rows to change their stacking order; higher rows appear
 above lower rows on the map.
 Click a layer's colour swatch to change its colour and fill opacity. These
 settings are saved in the browser's local storage.
-The **Benchmarking layers**, **Other layers**, and **BAP habitats** sections list
-PMTiles from `data/bm-layers/`, `data/other/`, and `data/bap/`, respectively.
+The **Benchmarking layers**, **Other layers**, **BAP habitats**, and **LNRS
+layers** sections list PMTiles from `data/bm-layers/`, `data/other/`,
+`data/bap/`, and `data/lnrs/`, respectively.
 Only one Benchmarking layer can be displayed at a time; choose **None** to hide
 all of them. The Benchmarking section has shared opacity, border thickness
 (0-5 px, default 1 px), statistic-column, and default fill-colour controls.
@@ -32,11 +33,15 @@ default. A map legend shows the active layer, metric, ramp, and integer
 value ticks. Tick positions follow the selected transform, with tick intervals
 adapting to the metric range. Check **Hide areas with null values** to hide
 unmatched features, including their outlines. Choosing **None selected**
-restores the shared solid colour. Other and BAP layers retain their individual
-styles and can still be reordered within their sections; each section renders
-below the preceding one.
+restores the shared solid colour. Other, BAP, and LNRS layers retain their
+individual styles and can still be reordered within their sections; each
+section renders below the preceding one.
 Click a polygon to view its layer and site name. Benchmarking popups also show
-the selected metric column and its original, untransformed value.
+the selected metric column and its original, untransformed value. BAP and LNRS
+popups show all available feature attributes instead of a site name; overlapping
+BAP/LNRS features at the clicked point appear in separate sections. Select
+**Highlight boundary** in an attribute section to outline that feature on the
+map.
 The selected Benchmarking layer, metric, transform, colour ramp, and
 null-value visibility setting are restored from browser storage on the next
 visit.
@@ -65,4 +70,5 @@ and add its file, layer name, display name, and default colour to
 `benchmarkingLayers` in `app.js`. Add LERN or other boundary layers to
 `otherLayers` with files in `data/other/`. To add a BAP habitat, put its archive
 in `data/bap/` and add its habitat value to `bapHabitats` and a default colour
-to `bapColors`.
+to `bapColors`. Add LNRS archives to `data/lnrs/` and define them in
+`lnrsLayers`; the shapefile converter is in `../scripts/shp2webgl.mjs`.
