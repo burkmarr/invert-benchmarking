@@ -15,6 +15,7 @@
 			"imports": {
 				"@maplibre/maplibre-gl-leaflet": "https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/dist/leaflet-maplibre-gl.mjs",
 				"fflate": "https://unpkg.com/fflate@0.8.3/esm/browser.js",
+				"html2canvas": "https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.esm.js",
 				"leaflet": "https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js",
 				"maplibre-gl": "https://unpkg.com/maplibre-gl@6.3.0/dist/maplibre-gl.mjs",
 				"pmtiles": "https://unpkg.com/pmtiles@4.5.0/dist/esm/index.js"
@@ -44,44 +45,129 @@
 				<p>Choose a basemap and switch boundary layers on or off. Vector tiles load as you explore.</p>
 			</section> -->
 
-			<section class="control-section" aria-labelledby="basemap-heading">
-				<div class="section-heading basemap-section-heading">
-					<div>
-						<h3 id="basemap-heading">Basemap</h3>
-						<!-- <p>Choose your background</p> -->
-					</div>
-					<button id="recentre-map" class="recentre-button" type="button">Recentre</button>
-				</div>
-				<div class="choice-list" id="basemap-options"></div>
-				<label class="choice-row basemap-greyscale-option" for="basemap-greyscale">
-					<input id="basemap-greyscale" type="checkbox">
-					<span>Greyscale</span>
-				</label>
-			</section>
+			<div class="sidebar-toolbar">
+				<button id="recentre-map" class="recentre-button" type="button">Recentre</button>
+				<button id="download-map" class="recentre-button" type="button">Download</button>
+			</div>
 
 			<div class="layer-groups">
+				<section class="control-section layer-section" aria-labelledby="basemap-heading">
+					<div class="basemap-section-heading">
+						<button id="basemap-toggle" class="section-heading layer-section-toggle" type="button"
+							aria-expanded="false" aria-controls="basemap-panel">
+							<span class="layer-section-heading-copy">
+								<span class="layer-section-title" id="basemap-heading" role="heading" aria-level="3">Basemap</span>
+							</span>
+							<span class="accordion-chevron" aria-hidden="true"></span>
+						</button>
+					</div>
+					<div id="basemap-panel" hidden>
+						<div class="choice-list" id="basemap-options"></div>
+						<label class="choice-row basemap-greyscale-option" for="basemap-greyscale">
+							<input id="basemap-greyscale" type="checkbox">
+							<span>Greyscale</span>
+						</label>
+						<label class="basemap-opacity-control" for="basemap-opacity">
+							<span>Opacity <output id="basemap-opacity-value">100%</output></span>
+							<input id="basemap-opacity" type="range" min="0" max="100" step="1" value="100">
+						</label>
+					</div>
+				</section>
+
 				<section class="control-section layer-section" aria-labelledby="layers-heading">
 					<button id="layers-toggle" class="section-heading layer-section-toggle" type="button"
-						aria-expanded="true" aria-controls="layer-options">
+						aria-expanded="false" aria-controls="benchmarking-panel">
 						<span class="layer-section-heading-copy">
-							<span class="layer-section-title" id="layers-heading" role="heading" aria-level="3">Analytical areas</span>
-							<span class="layer-section-summary"><span id="selected-count">0</span> selected · drag rows to reorder, click swatch to restyle</span>
+							<span class="layer-section-title" id="layers-heading" role="heading" aria-level="3">Benchmarking layers</span>
+							<span class="layer-section-summary"><span id="selected-count">0</span> selected · choose one layer</span>
 						</span>
 						<span class="accordion-chevron" aria-hidden="true"></span>
 					</button>
-					<div class="layer-list" id="layer-options"></div>
+					<div id="benchmarking-panel" hidden>
+						<div class="layer-list" id="layer-options">
+							<label class="choice-row" for="benchmarking-none">
+								<input id="benchmarking-none" type="radio" name="benchmarking-layer" value="" checked>
+								<span>None</span>
+							</label>
+						</div>
+						<div class="layer-settings benchmark-shared-settings" id="benchmark-style-controls">
+							<label class="layer-style-control benchmark-column-control">
+								<span>Column</span>
+								<select id="benchmark-column" disabled>
+									<option value="">Loading columns...</option>
+								</select>
+							</label>
+							<label class="layer-style-control benchmark-transform-control">
+								<span>Transform</span>
+								<select id="benchmark-transform">
+									<option value="none">none</option>
+									<option value="sqrt">sqrt</option>
+									<option value="cbrt">cbrt</option>
+									<option value="log" selected>log</option>
+									<option value="log10">log10</option>
+								</select>
+							</label>
+							<label class="layer-style-control benchmark-ramp-control">
+								<span>Colour ramp</span>
+								<select id="benchmark-ramp">
+									<optgroup label="Perceptually uniform">
+										<option value="viridis" selected>Viridis</option>
+										<option value="cividis">Cividis</option>
+									</optgroup>
+									<optgroup label="Single hue">
+										<option value="blues">Blue</option>
+										<option value="purples">Purple</option>
+									</optgroup>
+									<optgroup label="Multi hue">
+										<option value="bupu">BuPu</option>
+										<option value="pubugn">PuBuGn</option>
+										<option value="ylgn">YlGn</option>
+										<option value="ylorrd">YlOrRd</option>
+									</optgroup>
+								</select>
+							</label>
+							<label class="layer-style-control">
+								<span>Default colour</span>
+								<input id="benchmark-colour" type="color" value="#18836a">
+							</label>
+							<label class="layer-style-control">
+								<span>Fill opacity <output id="benchmark-opacity-value">60%</output></span>
+								<input id="benchmark-opacity" type="range" min="0" max="100" step="1" value="60">
+							</label>
+							<label class="layer-style-control">
+								<span>Border thickness <output id="benchmark-border-width-value">1 px</output></span>
+								<input id="benchmark-border-width" type="range" min="0" max="5" step="0.1" value="1">
+							</label>
+							<label class="benchmark-null-values-control" for="benchmark-hide-null-values">
+								<input id="benchmark-hide-null-values" type="checkbox">
+								<span>Hide areas with null values</span>
+							</label>
+						</div>
+					</div>
+				</section>
+
+				<section class="control-section layer-section" aria-labelledby="other-layers-heading">
+					<button id="other-layers-toggle" class="section-heading layer-section-toggle" type="button"
+						aria-expanded="false" aria-controls="other-layer-options">
+						<span class="layer-section-heading-copy">
+							<span class="layer-section-title" id="other-layers-heading" role="heading" aria-level="3">Other layers</span>
+							<span class="layer-section-summary"><span id="other-selected-count">0</span> selected · drag rows to reorder, click swatch to restyle</span>
+						</span>
+						<span class="accordion-chevron" aria-hidden="true"></span>
+					</button>
+					<div class="layer-list" id="other-layer-options" hidden></div>
 				</section>
 
 				<section class="control-section layer-section" aria-labelledby="bap-layers-heading">
 					<button id="bap-layers-toggle" class="section-heading layer-section-toggle" type="button"
-						aria-expanded="true" aria-controls="bap-layer-options">
+						aria-expanded="false" aria-controls="bap-layer-options">
 						<span class="layer-section-heading-copy">
 							<span class="layer-section-title" id="bap-layers-heading" role="heading" aria-level="3">BAP habitats</span>
 							<span class="layer-section-summary"><span id="bap-selected-count">0</span> selected · drag rows to reorder, click swatch to restyle</span>
 						</span>
 						<span class="accordion-chevron" aria-hidden="true"></span>
 					</button>
-					<div class="layer-list" id="bap-layer-options"></div>
+					<div class="layer-list" id="bap-layer-options" hidden></div>
 				</section>
 			</div>
 
@@ -93,6 +179,11 @@
 
 		<section class="map-shell" aria-label="Interactive map">
 			<div id="map"></div>
+			<div class="benchmark-legend" id="benchmark-legend" hidden role="group" aria-label="Benchmarking colour legend">
+				<p class="benchmark-legend-title" id="benchmark-legend-title"></p>
+				<div class="benchmark-legend-gradient" id="benchmark-legend-gradient" aria-hidden="true"></div>
+				<div class="benchmark-legend-ticks" id="benchmark-legend-ticks" aria-label="Integer values on the colour scale"></div>
+			</div>
 			<div class="coordinate-readout" id="coordinates">54.05° N&nbsp; · &nbsp;2.80° W</div>
 		</section>
 	</main>

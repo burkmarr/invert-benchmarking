@@ -38,7 +38,7 @@ const siteDefs = {
     sssi: {
         file: "E:\\Tanyptera\\benchmarking\\data\\sites\\sssi-in-lern.geojson",
         nameFld: "SSSI_NAME",
-        fileOutSuffix: "sssi"
+        fileOutSuffix: "sssi-in-lern"
     },
     tetrads: {
         file: "E:\\Tanyptera\\benchmarking\\data\\sites\\tetrads.geojson",
@@ -55,7 +55,7 @@ const siteDefs = {
 const lastNYears = 50;
 const currentYear = new Date().getFullYear();
 const reportTxt = "E:\\Tanyptera\\benchmarking\\data\\sat-totals.txt";
-const sitesReportCsv = "E:\\Tanyptera\\benchmarking\\data\\sat-sites-<suffix>.csv";
+const sitesReportCsv = "E:\\Tanyptera\\benchmarking\\map\\data\\benchmarking\\sat-sites-<suffix>.csv";
 const osgb36Crs = '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs';
 
 function createCsvParser(filePath, requiredColumns) {
